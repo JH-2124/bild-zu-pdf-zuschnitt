@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bild zu PDF Generator DIN A2 bis A5</title>
+  <style>
+    :root{
+      --bg:#0f1115;
+      --panel:#171a21;
+      --panel2:#202633;
+      --panel3:#121722;
+      --text:#eef2f7;
+      --muted:#aeb7c6;
+      --accent:#67b7ff;
+      --ok:#86efac;
+      --warn:#fbbf24;
+      --border:#2c3444;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:linear-gradient(180deg,#0c0f14 0%, #11151d 100%);
+      color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+    .wrap{
+      display:grid;
+      grid-template-columns:390px 1fr;
+      gap:18px;
+      padding:18px;
+      min-height:100vh;
+    }
+    .panel{
+      background:rgba(23,26,33,.96);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+    }
+    .sidebar{
+      padding:18px;
+      position:sticky;
+      top:18px;
+      height:fit-content;
+    }
+    h1{margin:0 0 6px;font-size:1.35rem;line-height:1.2}
+    h2{margin:0 0 12px;font-size:1.05rem}
+    h3{margin:0 0 10px;font-size:1rem}
+    p{line-height:1.45}
+    .subtitle{color:var(--muted);font-size:.94rem;margin:0 0 14px}
+    .group{padding:14px;background:var(--panel2);border:1px solid var(--border);border-radius:14px;margin-bottom:12px}
+    label{display:block;font-size:.9rem;color:#dbe5f4;margin-bottom:6px}
+    input, select{
+      width:100%;
+      border:1px solid #3b4558;
+      background:#111722;
+      color:var(--text);
+      border-radius:11px;
+      padding:10px 11px;
+      font:inherit;
+      outline:none;
+    }
+    input:focus, select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(103,183,255,.12)}
+    input[type="file"]{border-style:dashed;background:#121722}
+    input[type="checkbox"]{width:auto;transform:translateY(1px);accent-color:var(--accent)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .inline{display:flex;align-items:center;gap:8px;margin:8px 0;color:var(--muted);font-size:.9rem}
+    .btnrow{display:flex;gap:10px;flex-wrap:wrap}
+    button{
+      cursor:pointer;
+      border:1px solid var(--border);
+      background:#121824;
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:12px;
+      transition:.18s ease;
+      font-weight:700;
+    }
+    button:hover{transform:translateY(-1px);border-color:#42506a;background:#161e2e}
+    button.primary{background:linear-gradient(180deg,#1a7fe0,#1267b5);border-color:#2b7fd3}
+    button.primary:hover{background:linear-gradient(180deg,#2390fb,#1775cb)}
+    button.secondary{background:#172031}
+    .small{font-size:.84rem;color:var(--muted);line-height:1.38}
+    .status{padding:10px 12px;border-radius:12px;background:#101722;border:1px solid var(--border);color:var(--muted);font-size:.9rem;min-height:44px;display:flex;align-items:center}
+    .main{padding:18px;display:grid;gap:18px;align-content:start}
+    .hint{padding:12px 14px;border-radius:12px;border:1px solid #2b4250;background:#11202a;color:#d1ecff;font-size:.9rem;line-height:1.45}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+    .card{background:var(--panel2);border:1px solid var(--border);border-radius:16px;padding:14px;overflow:hidden}
+    .card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+    .badge{font-size:.78rem;color:#d1ecff;background:#11202a;border:1px solid #2b4250;border-radius:999px;padding:4px 8px;white-space:nowrap}
+    .preview-wrap{display:flex;align-items:center;justify-content:center;background:#0f131b;border:1px solid #2a3140;border-radius:14px;padding:12px;overflow:auto;min-height:360px}
+    .paper{
+      position:relative;
+      background:#fff;
+      box-shadow:0 10px 24px rgba(0,0,0,.35);
+      overflow:hidden;
+    }
+    .paper::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border:1px solid rgba(0,0,0,.12);
+      pointer-events:none;
+    }
+    .placed-img{position:absolute;object-fit:fill;display:block;outline:2px solid rgba(0,0,0,.25)}
+    .centerline-x,.centerline-y{position:absolute;background:rgba(20,120,220,.22);pointer-events:none}
+    .centerline-x{left:50%;top:0;width:1px;height:100%}
+    .centerline-y{top:50%;left:0;height:1px;width:100%}
+    .controls-grid{display:grid;gap:10px;margin-top:12px}
+    .warning{color:var(--warn);font-size:.84rem;line-height:1.4;margin-top:8px;display:none}
+    .meta{font-size:.84rem;color:var(--muted);line-height:1.4}
+    @media (max-width:1100px){.wrap{grid-template-columns:1fr}.sidebar{position:static}.cards{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="panel sidebar">
+      <h1>Bild zu PDF Generator</h1>
+      <p class="subtitle">Lade ein oder zwei Bilder hoch und platziere jedes Bild auf einer eigenen PDF-Seite im gewählten DIN-Format.</p>
+
+      <div class="group">
+        <h2>Bilder</h2>
+        <label for="imageInput">1 oder 2 Bilder hochladen</label>
+        <input id="imageInput" type="file" accept="image/*" multiple />
+        <p class="small" style="margin-top:10px">Es werden maximal zwei Bilder übernommen. Jedes Bild wird auf eine neue PDF-Seite gesetzt.</p>
+      </div>
+
+      <div class="group">
+        <h2>PDF-Seite</h2>
+        <div class="row">
+          <div>
+            <label for="paperSize">DIN-Format</label>
+            <select id="paperSize">
+              <option value="A2">A2, 420 x 594 mm</option>
+              <option value="A3">A3, 297 x 420 mm</option>
+              <option value="A4" selected>A4, 210 x 297 mm</option>
+              <option value="A5">A5, 148 x 210 mm</option>
+            </select>
+          </div>
+          <div>
+            <label for="orientation">Ausrichtung</label>
+            <select id="orientation">
+              <option value="portrait" selected>Hochformat</option>
+              <option value="landscape">Querformat</option>
+            </select>
+          </div>
+        </div>
+        <p class="small" id="pageInfo" style="margin:10px 0 0">Aktuelle Seite: 210 x 297 mm</p>
+      </div>
+
+      <div class="group">
+        <h2>Aktionen</h2>
+        <div class="btnrow">
+          <button class="secondary" id="fitAllBtn">Alle einpassen</button>
+          <button class="secondary" id="centerAllBtn">Alle zentrieren</button>
+          <button class="primary" id="downloadBtn">PDF herunterladen</button>
+        </div>
+        <p class="small" style="margin-top:10px">Für exakte Größe die Breite und Höhe in Millimetern eintragen. Bei aktivierter Zentrierung wird das Bild automatisch mittig platziert.</p>
+      </div>
+
+      <div class="status" id="status">Bitte ein oder zwei Bilder hochladen.</div>
+    </aside>
+
+    <main class="panel main">
+      <div class="hint">
+        <strong>Beispiel für A2:</strong> DIN A2 wählen, Bildbreite 400 mm und Bildhöhe 500 mm eintragen, „mittig zentrieren“ aktiv lassen und anschließend PDF herunterladen.
+      </div>
+
+      <section class="cards" id="cards"></section>
+    </main>
+  </div>
+
+  <script>
+    'use strict';
+
+    const MM_TO_PT = 72 / 25.4;
+    const DIN = {
+      A2: {w:420, h:594},
+      A3: {w:297, h:420},
+      A4: {w:210, h:297},
+      A5: {w:148, h:210}
+    };
+
+    const imageInput = document.getElementById('imageInput');
+    const paperSize = document.getElementById('paperSize');
+    const orientation = document.getElementById('orientation');
+    const pageInfo = document.getElementById('pageInfo');
+    const cards = document.getElementById('cards');
+    const statusEl = document.getElementById('status');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const fitAllBtn = document.getElementById('fitAllBtn');
+    const centerAllBtn = document.getElementById('centerAllBtn');
+
+    let images = [];
+
+    imageInput.addEventListener('change', handleFiles);
+    paperSize.addEventListener('change', updateAll);
+    orientation.addEventListener('change', updateAll);
+    downloadBtn.addEventListener('click', downloadPdf);
+    fitAllBtn.addEventListener('click', ()=>{
+      const page = getPageMm();
+      images.forEach((item, index)=>{
+        fitImageToPage(item, page);
+        syncCardInputs(index);
+      });
+      renderAll();
+    });
+    centerAllBtn.addEventListener('click', ()=>{
+      images.forEach((item, index)=>{
+        item.center = true;
+        syncCardInputs(index);
+      });
+      renderAll();
+    });
+
+    async function handleFiles(event){
+      const files = Array.from(event.target.files || []).slice(0, 2);
+      if(files.length === 0) return;
+
+      setStatus('Lade Bilder...');
+      const loaded = [];
+      for(const file of files){
+        try{
+          loaded.push(await loadImageFile(file));
+        }catch(error){
+          console.error(error);
+          setStatus('Mindestens ein Bild konnte nicht geladen werden.');
+        }
+      }
+
+      images = loaded;
+      const page = getPageMm();
+      images.forEach(item=>fitImageToPage(item, page));
+      buildCards();
+      updateAll();
+    }
+
+    function loadImageFile(file){
+      return new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = e=>{
+          const img = new Image();
+          img.onload = ()=>resolve({
+            file,
+            name:file.name,
+            img,
+            url:e.target.result,
+            naturalW:img.naturalWidth || img.width,
+            naturalH:img.naturalHeight || img.height,
+            widthMm:100,
+            heightMm:100,
+            xMm:0,
+            yMm:0,
+            center:true,
+            keepRatio:true,
+            quality:0.95
+          });
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getPageMm(){
+      const base = DIN[paperSize.value];
+      if(orientation.value === 'landscape') return {w:base.h, h:base.w};
+      return {w:base.w, h:base.h};
+    }
+
+    function updateAll(){
+      const page = getPageMm();
+      pageInfo.textContent = `Aktuelle Seite: ${page.w} x ${page.h} mm`;
+      renderAll();
+    }
+
+    function fitImageToPage(item, page){
+      const margin = Math.min(20, page.w * 0.07, page.h * 0.07);
+      const maxW = page.w - margin * 2;
+      const maxH = page.h - margin * 2;
+      const aspect = item.naturalW / item.naturalH;
+      let w = maxW;
+      let h = w / aspect;
+      if(h > maxH){
+        h = maxH;
+        w = h * aspect;
+      }
+      item.widthMm = round1(w);
+      item.heightMm = round1(h);
+      item.center = true;
+      setCenteredPosition(item, page);
+    }
+
+    function setCenteredPosition(item, page){
+      item.xMm = round1((page.w - item.widthMm) / 2);
+      item.yMm = round1((page.h - item.heightMm) / 2);
+    }
+
+    function buildCards(){
+      cards.innerHTML = '';
+      images.forEach((item, index)=>{
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.dataset.index = String(index);
+        card.innerHTML = `
+          <div class="card-head">
+            <div>
+              <h3>Seite ${index + 1}</h3>
+              <div class="meta">${escapeHtml(item.name)}<br>${item.naturalW} x ${item.naturalH} px</div>
+            </div>
+            <span class="badge">Bild ${index + 1}</span>
+          </div>
+          <div class="preview-wrap">
+            <div class="paper" data-role="paper">
+              <span class="centerline-x"></span>
+              <span class="centerline-y"></span>
+              <img class="placed-img" data-role="placed" alt="Vorschau" />
+            </div>
+          </div>
+          <div class="controls-grid">
+            <div class="row">
+              <div>
+                <label>Breite in mm</label>
+                <input type="number" min="1" step="0.1" data-field="widthMm" />
+              </div>
+              <div>
+                <label>Höhe in mm</label>
+                <input type="number" min="1" step="0.1" data-field="heightMm" />
+              </div>
+            </div>
+            <label class="inline"><input type="checkbox" data-field="keepRatio" /> Seitenverhältnis beim Ändern beibehalten</label>
+            <label class="inline"><input type="checkbox" data-field="center" /> Bild mittig zentrieren</label>
+            <div class="row">
+              <div>
+                <label>X-Position in mm</label>
+                <input type="number" step="0.1" data-field="xMm" />
+              </div>
+              <div>
+                <label>Y-Position in mm</label>
+                <input type="number" step="0.1" data-field="yMm" />
+              </div>
+            </div>
+            <div class="row">
+              <button type="button" data-action="fit">Diese Seite einpassen</button>
+              <button type="button" data-action="center">Diese Seite zentrieren</button>
+            </div>
+            <div class="warning" data-role="warning"></div>
+          </div>
+        `;
+        cards.appendChild(card);
+        bindCard(card, item, index);
+        syncCardInputs(index);
+      });
+    }
+
+    function bindCard(card, item, index){
+      card.querySelectorAll('input[data-field]').forEach(input=>{
+        input.addEventListener('input', ()=>{
+          const field = input.dataset.field;
+          const page = getPageMm();
+          if(input.type === 'checkbox'){
+            item[field] = input.checked;
+          }else{
+            const value = Number(input.value);
+            if(Number.isFinite(value)){
+              const oldW = item.widthMm;
+              const oldH = item.heightMm;
+              item[field] = value;
+
+              if(item.keepRatio && field === 'widthMm' && oldW !== value){
+                item.heightMm = round1(item.widthMm * item.naturalH / item.naturalW);
+                syncCardInputs(index, ['heightMm']);
+              }
+              if(item.keepRatio && field === 'heightMm' && oldH !== value){
+                item.widthMm = round1(item.heightMm * item.naturalW / item.naturalH);
+                syncCardInputs(index, ['widthMm']);
+              }
+            }
+          }
+
+          if(item.center) setCenteredPosition(item, page);
+          syncCardInputs(index, ['xMm','yMm','center','keepRatio']);
+          renderAll();
+        });
+      });
+
+      card.querySelector('[data-action="fit"]').addEventListener('click', ()=>{
+        fitImageToPage(item, getPageMm());
+        syncCardInputs(index);
+        renderAll();
+      });
+
+      card.querySelector('[data-action="center"]').addEventListener('click', ()=>{
+        item.center = true;
+        setCenteredPosition(item, getPageMm());
+        syncCardInputs(index);
+        renderAll();
+      });
+    }
+
+    function syncCardInputs(index, fields=null){
+      const item = images[index];
+      const card = cards.querySelector(`[data-index="${index}"]`);
+      if(!item || !card) return;
+      const allowed = fields ? new Set(fields) : null;
+
+      card.querySelectorAll('input[data-field]').forEach(input=>{
+        const field = input.dataset.field;
+        if(allowed && !allowed.has(field)) return;
+        if(input.type === 'checkbox') input.checked = !!item[field];
+        else input.value = item[field];
+        if(field === 'xMm' || field === 'yMm') input.disabled = !!item.center;
+      });
+    }
+
+    function renderAll(){
+      const page = getPageMm();
+      pageInfo.textContent = `Aktuelle Seite: ${page.w} x ${page.h} mm`;
+
+      images.forEach((item, index)=>{
+        if(item.center) setCenteredPosition(item, page);
+        syncCardInputs(index, ['xMm','yMm']);
+        renderCard(index, page);
+      });
+
+      if(images.length === 0) setStatus('Bitte ein oder zwei Bilder hochladen.');
+      else setStatus(`${images.length} Bild(er) geladen. Bereit für PDF-Export.`);
+    }
+
+    function renderCard(index, page){
+      const item = images[index];
+      const card = cards.querySelector(`[data-index="${index}"]`);
+      if(!item || !card) return;
+
+      const paper = card.querySelector('[data-role="paper"]');
+      const img = card.querySelector('[data-role="placed"]');
+      const warning = card.querySelector('[data-role="warning"]');
+      const maxPreviewW = 320;
+      const maxPreviewH = 440;
+      const scale = Math.min(maxPreviewW / page.w, maxPreviewH / page.h);
+
+      paper.style.width = `${page.w * scale}px`;
+      paper.style.height = `${page.h * scale}px`;
+      img.src = item.url;
+      img.style.left = `${item.xMm * scale}px`;
+      img.style.top = `${item.yMm * scale}px`;
+      img.style.width = `${item.widthMm * scale}px`;
+      img.style.height = `${item.heightMm * scale}px`;
+
+      const outside = item.xMm < 0 || item.yMm < 0 || item.xMm + item.widthMm > page.w || item.yMm + item.heightMm > page.h;
+      if(outside){
+        warning.style.display = 'block';
+        warning.textContent = 'Achtung: Das Bild liegt teilweise außerhalb der PDF-Seite.';
+      }else{
+        warning.style.display = 'none';
+        warning.textContent = '';
+      }
+    }
+
+    async function downloadPdf(){
+      if(images.length === 0){
+        setStatus('Bitte zuerst ein oder zwei Bilder hochladen.');
+        return;
+      }
+
+      try{
+        setStatus('PDF wird erstellt...');
+        await new Promise(resolve=>setTimeout(resolve, 10));
+        const page = getPageMm();
+        const pdfBytes = await createPdfBytes(images, page);
+        const blob = new Blob([pdfBytes], {type:'application/pdf'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `bilder_${paperSize.value}_${orientation.value}.pdf`;
+        link.click();
+        setTimeout(()=>URL.revokeObjectURL(url), 1000);
+        setStatus('PDF wurde erstellt und heruntergeladen.');
+      }catch(error){
+        console.error(error);
+        setStatus('Beim Erstellen des PDFs ist ein Fehler aufgetreten.');
+      }
+    }
+
+    async function createPdfBytes(items, pageMm){
+      const pageWPt = pageMm.w * MM_TO_PT;
+      const pageHPt = pageMm.h * MM_TO_PT;
+      const enc = new TextEncoder();
+      const chunks = [];
+      const offsets = [0];
+      let offset = 0;
+
+      function addString(str){
+        const bytes = enc.encode(str);
+        chunks.push(bytes);
+        offset += bytes.length;
+      }
+
+      function addBytes(bytes){
+        chunks.push(bytes);
+        offset += bytes.length;
+      }
+
+      function startObj(num){
+        offsets[num] = offset;
+        addString(`${num} 0 obj\n`);
+      }
+
+      addString('%PDF-1.4\n');
+
+      const imageData = [];
+      for(const item of items){
+        imageData.push(await imageToJpegBytes(item));
+      }
+
+      const pageRefs = [];
+      const pageEntries = [];
+      let obj = 3;
+      for(let i=0; i<items.length; i++){
+        const pageObj = obj++;
+        const contentObj = obj++;
+        const imageObj = obj++;
+        pageRefs.push(pageObj);
+        pageEntries.push({pageObj, contentObj, imageObj, imageName:`Im${i+1}`});
+      }
+
+      startObj(1);
+      addString('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+      startObj(2);
+      addString(`<< /Type /Pages /Kids [${pageRefs.map(n=>`${n} 0 R`).join(' ')}] /Count ${pageRefs.length} >>\nendobj\n`);
+
+      for(let i=0; i<items.length; i++){
+        const item = items[i];
+        const entry = pageEntries[i];
+        const jpg = imageData[i];
+        const drawW = item.widthMm * MM_TO_PT;
+        const drawH = item.heightMm * MM_TO_PT;
+        const drawX = item.xMm * MM_TO_PT;
+        const drawY = pageHPt - (item.yMm * MM_TO_PT) - drawH;
+        const content = `q\n${fmt(drawW)} 0 0 ${fmt(drawH)} ${fmt(drawX)} ${fmt(drawY)} cm\n/${entry.imageName} Do\nQ\n`;
+
+        startObj(entry.pageObj);
+        addString(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${fmt(pageWPt)} ${fmt(pageHPt)}] /Resources << /XObject << /${entry.imageName} ${entry.imageObj} 0 R >> >> /Contents ${entry.contentObj} 0 R >>\nendobj\n`);
+
+        startObj(entry.contentObj);
+        addString(`<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream\nendobj\n`);
+
+        startObj(entry.imageObj);
+        addString(`<< /Type /XObject /Subtype /Image /Width ${jpg.width} /Height ${jpg.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.bytes.length} >>\nstream\n`);
+        addBytes(jpg.bytes);
+        addString('\nendstream\nendobj\n');
+      }
+
+      const xrefStart = offset;
+      const totalObjects = obj;
+      addString(`xref\n0 ${totalObjects}\n`);
+      addString('0000000000 65535 f \n');
+      for(let i=1; i<totalObjects; i++){
+        addString(`${String(offsets[i]).padStart(10,'0')} 00000 n \n`);
+      }
+      addString(`trailer\n<< /Size ${totalObjects} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+
+      const totalLength = chunks.reduce((sum, part)=>sum + part.length, 0);
+      const output = new Uint8Array(totalLength);
+      let pos = 0;
+      for(const part of chunks){
+        output.set(part, pos);
+        pos += part.length;
+      }
+      return output;
+    }
+
+    function imageToJpegBytes(item){
+      return new Promise(resolve=>{
+        const canvas = document.createElement('canvas');
+        canvas.width = item.naturalW;
+        canvas.height = item.naturalH;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(item.img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', item.quality || 0.95);
+        const base64 = dataUrl.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for(let i=0; i<binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        resolve({bytes, width:canvas.width, height:canvas.height});
+      });
+    }
+
+    function fmt(value){
+      return Number(value).toFixed(3).replace(/\.000$/, '');
+    }
+
+    function round1(value){
+      return Math.round(value * 10) / 10;
+    }
+
+    function setStatus(text){
+      statusEl.textContent = text;
+    }
+
+    function escapeHtml(str){
+      return String(str).replace(/[&<>'"]/g, char=>({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '\'':'&#039;',
+        '"':'&quot;'
+      }[char]));
+    }
+  </script>
+</body>
+</html>
